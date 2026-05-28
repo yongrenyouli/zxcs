@@ -1,0 +1,44 @@
+{
+  "version" : "1.0.0",
+  "localizedNames" : {
+    "pt" : "",
+    "it" : "",
+    "fr" : "",
+    "es" : "",
+    "ru" : "",
+    "ja" : "",
+    "zh" : "",
+    "en" : "",
+    "de" : ""
+  },
+  "entry" : "index.tsx",
+  "contributors" : [
+
+  ],
+  "localizedDescriptions" : {
+    "pt" : "",
+    "it" : "",
+    "fr" : "",
+    "es" : "",
+    "ru" : "",
+    "ja" : "",
+    "zh" : "",
+    "en" : "",
+    "de" : ""
+  },
+  "remoteResource" : null,
+  "intentInputTypes" : [
+
+  ],
+  "iconImage" : null,
+  "icon" : "square.2.layers.3d.fill",
+  "description" : null,
+  "name" : "知轩藏书",
+  "runInApp" : false,
+  "color" : "rgba(230, 190, 1,1)",
+  "author" : {
+    "email" : "ylzzylzw@gmail.com",
+    "homepage" : "https:\/\/github.com\/yongrenyouli",
+    "name" : "ylzzylzw"
+  }
+}
