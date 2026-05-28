@@ -1,44 +1,48 @@
 {
-  "version" : "1.0.0",
-  "localizedNames" : {
-    "pt" : "",
-    "it" : "",
-    "fr" : "",
-    "es" : "",
-    "ru" : "",
-    "ja" : "",
-    "zh" : "",
-    "en" : "",
-    "de" : ""
-  },
   "entry" : "index.tsx",
+  "runInApp" : false,
+  "version" : "1.0.0",
+  "color" : "rgba(230, 190, 1,1)",
+  "author" : {
+    "name" : "ylzzylzw",
+    "homepage" : "https:\/\/github.com\/yongrenyouli",
+    "email" : "ylzzylzw@gmail.com"
+  },
+  "description" : null,
   "contributors" : [
 
   ],
-  "localizedDescriptions" : {
-    "pt" : "",
-    "it" : "",
-    "fr" : "",
-    "es" : "",
-    "ru" : "",
-    "ja" : "",
-    "zh" : "",
-    "en" : "",
-    "de" : ""
+  "remoteResource" : {
+    "hash" : "e43e30137864bbaedbe697dd9992a601",
+    "url" : "https:\/\/github.com\/yongrenyouli\/zxcs",
+    "autoUpdateInterval" : 300
   },
-  "remoteResource" : null,
+  "iconImage" : null,
+  "localizedNames" : {
+    "ja" : "",
+    "fr" : "",
+    "ru" : "",
+    "zh" : "",
+    "de" : "",
+    "en" : "",
+    "es" : "",
+    "it" : "",
+    "pt" : ""
+  },
   "intentInputTypes" : [
 
   ],
-  "iconImage" : null,
-  "icon" : "square.2.layers.3d.fill",
-  "description" : null,
   "name" : "知轩藏书",
-  "runInApp" : false,
-  "color" : "rgba(230, 190, 1,1)",
-  "author" : {
-    "email" : "ylzzylzw@gmail.com",
-    "homepage" : "https:\/\/github.com\/yongrenyouli",
-    "name" : "ylzzylzw"
+  "icon" : "square.2.layers.3d.fill",
+  "localizedDescriptions" : {
+    "es" : "",
+    "ja" : "",
+    "pt" : "",
+    "zh" : "",
+    "it" : "",
+    "fr" : "",
+    "ru" : "",
+    "de" : "",
+    "en" : ""
   }
 }

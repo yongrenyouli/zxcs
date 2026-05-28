@@ -12,7 +12,9 @@ import {
   Image,
   ProgressView,
   useState,
-  useEffect
+  useEffect,
+  ZStack,
+  RoundedRectangle
 } from "scripting";
 
 // Declare global alert function to satisfy TypeScript compiler
@@ -25,13 +27,28 @@ async function checkStatus(webView: WebViewController) {
   
   const info = await webView.evaluateJavaScript(`
     return (() => {
-      const isLoggedIn = document.body.classList.contains('logged-in') || !!document.querySelector('.display-name');
+      const nameEl = document.querySelector('.display-name');
+      let username = nameEl ? nameEl.textContent.trim() : '';
+      
+      // 1. Check WordPress standard logged-in body class
+      let isLoggedIn = document.body.classList.contains('logged-in');
+      
+      // 2. Fallback: Check display-name text content
+      if (nameEl && !isLoggedIn) {
+        const text = nameEl.textContent.trim();
+        if (text && !text.includes('请登录') && !text.includes('登录') && !text.includes('登录/注册') && !text.includes('signin')) {
+          isLoggedIn = true;
+          username = text;
+        }
+      }
+      
       if (!isLoggedIn) {
         return { isLoggedIn: false };
       }
       
-      const nameEl = document.querySelector('.display-name');
-      const username = nameEl ? nameEl.textContent.trim() : 'Unknown';
+      if (!username) {
+        username = '知轩藏书会员';
+      }
       
       const pointsEl = document.querySelector('.em3x');
       const points = pointsEl ? pointsEl.textContent.trim() : '0';
@@ -137,22 +154,24 @@ function MainView() {
 
   // Handle Login flow
   const handleLogin = async () => {
-    setLoading(true);
-    setStatusMessage("正在准备登录页面...");
     const webView = new WebViewController();
     try {
-      // Load login page
-      await webView.loadURL("https://www.zxcstxt.com/user-sign?tab=signin&redirect_to=https%3A%2F%2Fwww.zxcstxt.com%2Fuser%2F");
-      setStatusMessage("请在弹出的页面中完成登录...");
-      
-      // Present the login WebView so the user can interactively log in
-      await webView.present({
+      // 1. Present the login WebView first, so it pops up immediately for the user
+      const dismissPromise = webView.present({
         fullscreen: false,
         navigationTitle: "登录知轩藏书"
       });
       
-      // When the presented WebView is dismissed, we re-check the status!
+      // 2. Load the URL in parallel so WebKit handles loading progress visually
+      webView.loadURL("https://www.zxcstxt.com/user-sign?tab=signin&redirect_to=https%3A%2F%2Fwww.zxcstxt.com%2Fuser%2F");
+      
+      // 3. Wait for the user to close/dismiss the browser modal
+      await dismissPromise;
+      
+      // 4. Show a loading screen on the main UI while we re-validate their login status
+      setLoading(true);
       setStatusMessage("正在更新登录状态...");
+      
       const info = await checkStatus(webView);
       if (info && info.isLoggedIn) {
         setIsLoggedIn(true);
@@ -171,7 +190,7 @@ function MainView() {
         setStatusMessage("未检测到登录状态，请重试");
       }
     } catch (err) {
-      setStatusMessage("登录页面加载失败: " + err);
+      setStatusMessage("登录出错: " + err);
     } finally {
       setLoading(false);
       webView.dispose();
@@ -224,18 +243,21 @@ function MainView() {
 
   // Logout/Switch account flow
   const handleLogout = async () => {
-    setLoading(true);
-    setStatusMessage("正在注销登录...");
     const webView = new WebViewController();
     try {
-      // Load logout trigger page (standard WordPress logout or we can just load the sign-in modal/page to let user log out)
-      await webView.loadURL("https://www.zxcstxt.com/wp-login.php?action=logout");
-      // Give a brief moment or we can present it to let them click logout confirmation
-      await webView.present({
+      // 1. Present the modal immediately
+      const dismissPromise = webView.present({
         fullscreen: false,
         navigationTitle: "切换/退出账号"
       });
       
+      // 2. Load logout trigger page in parallel
+      webView.loadURL("https://www.zxcstxt.com/wp-login.php?action=logout");
+      
+      // 3. Wait for the user to close/confirm
+      await dismissPromise;
+      
+      setLoading(true);
       setStatusMessage("正在检查登录状态...");
       const info = await checkStatus(webView);
       if (info && info.isLoggedIn) {
@@ -276,36 +298,132 @@ function MainView() {
       >
         {loading ? (
           <Section>
-            <VStack spacing={16} padding={{ top: 30, bottom: 30 }} alignment="center">
-              <ProgressView />
-              <Text font="subheadline" foregroundStyle="gray">
-                {statusMessage}
-              </Text>
-            </VStack>
-          </Section>
-        ) : !isLoggedIn ? (
-          <Section>
-            <VStack spacing={20} padding={{ top: 30, bottom: 30 }} alignment="center">
-              <Image
-                systemName="person.crop.circle.badge.questionmark"
-                frame={{ width: 70, height: 70 }}
-                foregroundStyle="orange"
-              />
-              <VStack spacing={6} alignment="center">
-                <Text font="title3" bold={true}>
-                  尚未登录
-                </Text>
-                <Text font="footnote" foregroundStyle="gray">
+            <HStack>
+              <Spacer />
+              <VStack spacing={16} padding={{ top: 30, bottom: 30 }} alignment="center">
+                <ProgressView />
+                <Text font="subheadline" foregroundStyle="gray">
                   {statusMessage}
                 </Text>
               </VStack>
-              <Button
-                title="登录知轩藏书"
-                systemImage="lock.shield"
-                action={handleLogin}
-              />
-            </VStack>
+              <Spacer />
+            </HStack>
           </Section>
+        ) : !isLoggedIn ? (
+          <>
+            {/* Header / Brand Card */}
+            <Section>
+              <HStack>
+                <Spacer />
+                <VStack spacing={16} padding={{ top: 30, bottom: 30 }} alignment="center">
+                  <ZStack alignment="center">
+                    {/* Beautiful 3D Gradient Icon Container */}
+                    <RoundedRectangle
+                      cornerRadius={18}
+                      fill={{
+                        colors: ["#FF9500", "#FF5E3A"],
+                        startPoint: "top",
+                        endPoint: "bottom"
+                      }}
+                      frame={{ width: 72, height: 72 }}
+                      shadow={{
+                        color: "rgba(255, 94, 58, 0.45)",
+                        radius: 8,
+                        x: 0,
+                        y: 5
+                      }}
+                    />
+                    {/* Glossy White SF Symbol with hover/depth shadow */}
+                    <Image
+                      systemName="lock.shield.fill"
+                      resizable={true}
+                      frame={{ width: 34, height: 34 }}
+                      foregroundStyle="white"
+                      shadow={{
+                        color: "rgba(0, 0, 0, 0.2)",
+                        radius: 2,
+                        x: 0,
+                        y: 1.5
+                      }}
+                    />
+                  </ZStack>
+                  <VStack spacing={6} alignment="center">
+                    <Text font="title2" bold={true}>
+                      知轩藏书签到
+                    </Text>
+                    <Text font="subheadline" foregroundStyle="gray">
+                      {statusMessage || "安全登录您的账号，开启自动每日签到"}
+                    </Text>
+                  </VStack>
+                </VStack>
+                <Spacer />
+              </HStack>
+            </Section>
+
+            {/* Login Button Row */}
+            <Section footer={<Text>登录后，脚本将自动本地存储登录状态，支持通过 iOS 快捷指令配置每日全自动后台静默签到。</Text>}>
+              <Button action={handleLogin}>
+                <HStack spacing={16} padding={{ vertical: 12, horizontal: 4 }}>
+                  <Image
+                    systemName="key.fill"
+                    frame={{ width: 22, height: 22 }}
+                    foregroundStyle="blue"
+                  />
+                  <VStack alignment="leading" spacing={4}>
+                    <Text font="headline" bold={true}>
+                      立即登录账号
+                    </Text>
+                    <Text font="caption" foregroundStyle="gray">
+                      点击安全跳转至网页端进行登录
+                    </Text>
+                  </VStack>
+                  <Spacer />
+                  <Image
+                    systemName="chevron.right"
+                    frame={{ width: 12, height: 12 }}
+                    foregroundStyle="gray"
+                  />
+                </HStack>
+              </Button>
+            </Section>
+
+            {/* Features Info list */}
+            <Section title="全自动签到说明">
+              <HStack spacing={12} padding={{ vertical: 6 }}>
+                <Image
+                  systemName="clock.fill"
+                  frame={{ width: 18, height: 18 }}
+                  foregroundStyle="blue"
+                />
+                <VStack alignment="leading" spacing={2}>
+                  <Text font="subheadline" bold={true}>每日自动后台运行</Text>
+                  <Text font="caption" foregroundStyle="gray">通过 iOS 快捷指令添加本脚本，即可每日清晨在后台自动登录并签到，无需手动启动应用。</Text>
+                </VStack>
+              </HStack>
+              <HStack spacing={12} padding={{ vertical: 6 }}>
+                <Image
+                  systemName="shield.fill"
+                  frame={{ width: 18, height: 18 }}
+                  foregroundStyle="green"
+                />
+                <VStack alignment="leading" spacing={2}>
+                  <Text font="subheadline" bold={true}>安全本地沙盒</Text>
+                  <Text font="caption" foregroundStyle="gray">登录凭证（Cookies）仅安全保存在 iOS 系统的 WebKit 容器中，保障账号安全，绝不上传任何第三方服务器。</Text>
+                </VStack>
+              </HStack>
+              <HStack spacing={12} padding={{ vertical: 6 }}>
+                <Image
+                  systemName="sparkles"
+                  frame={{ width: 18, height: 18 }}
+                  foregroundStyle="yellow"
+                />
+                <VStack alignment="leading" spacing={2}>
+                  <Text font="subheadline" bold={true}>赚取会员积分</Text>
+                  <Text font="caption" foregroundStyle="gray">每日自动赚取论坛签到积分。登录后在此页面可以实时、方便地查看您当前的最新账户余额。</Text>
+                </VStack>
+              </HStack>
+            </Section>
+          </>
         ) : (
           <>
             {/* User Profile Card */}
@@ -395,17 +513,21 @@ function MainView() {
                   </VStack>
                 </HStack>
               ) : (
-                <VStack spacing={12} padding={{ vertical: 8 }} alignment="center">
-                  <Button
-                    title={checkingIn ? "正在签到..." : "一键每日签到"}
-                    systemImage="calendar.badge.clock"
-                    action={handleCheckIn}
-                    disabled={checkingIn}
-                  />
-                  <Text font="caption2" foregroundStyle="gray">
-                    一键发送签到请求，轻松赚取每日积分
-                  </Text>
-                </VStack>
+                <HStack>
+                  <Spacer />
+                  <VStack spacing={12} padding={{ vertical: 8 }} alignment="center">
+                    <Button
+                      title={checkingIn ? "正在签到..." : "一键每日签到"}
+                      systemImage="calendar.badge.clock"
+                      action={handleCheckIn}
+                      disabled={checkingIn}
+                    />
+                    <Text font="caption2" foregroundStyle="gray">
+                      一键发送签到请求，轻松赚取每日积分
+                    </Text>
+                  </VStack>
+                  <Spacer />
+                </HStack>
               )}
             </Section>
 
